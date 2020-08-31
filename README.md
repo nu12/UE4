@@ -1,5 +1,9 @@
 # Unreal Engine Notes
 
+## Definitions
+
+* Actor: anything that can be placed in a scene.
+
 ## Standards
 
 * Camel Case for variable names
@@ -61,3 +65,15 @@ struct FMyStruct{
 FMyStruc ClassName::FunctionName(){ /* ... */ };
 
 ```
+
+## UE_LOG
+
+```cpp
+UE_LOG(LogTemp, Error|Warning|Display, TEXT("Text!"));
+```
+
+## FVector & FTransform
+
+FVector inclides X, Y and Z regarding position/location/transform information.
+
+FTransform includes position, rotation and scale of the object.
