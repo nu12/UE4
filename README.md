@@ -221,3 +221,125 @@ void UGrabberComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 }
 ```
 Note: PhysicsHandler needs to be added in Actor menu. InputComponent is set by default.
+
+## Event binding & AddDynamic (event callback)
+
+Bind an event (such as OnTakeAnyDamage or OnComponentHit) to a method. Notice that the callback (bind) method needs to have the same signature as the Dynamic Delegate it is representing.
+
+Example: 
+```cpp
+// For GetOwner()->OnTakeAnyDamage, this is the delegate macro:
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_FiveParams( FTakeAnyDamageSignature, AActor, OnTakeAnyDamage, AActor*, DamagedActor, float, Damage, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser );
+
+// Notice it has five arguments after 'OnTakeAnyDamage', separeted by comas.
+// The delegate function should have the folloowing signature:
+void UHealthComponent::TakeDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+// And the binding to make it work:
+GetOwner()->OnTakeAnyDamage.AddDynamic(this, &UHealthComponent::TakeDamage);
+
+// With this, every time the game fires OnTakeAnyDamage event, the method above is executed.
+```
+
+Another example:
+```cpp
+// The delegate macro for reference
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_FiveParams( FComponentHitSignature, UPrimitiveComponent, OnComponentHit, UPrimitiveComponent*, HitComponent, AActor*, OtherActor, UPrimitiveComponent*, OtherComp, FVector, NormalImpulse, const FHitResult&, Hit );
+
+/* ... */
+
+/* BeginPlay */
+StaticMeshComponent->OnComponentHit.AddDynamic(this, &AProjectileBase::OnHit);
+
+/* ... */
+
+void AProjectileBase::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	/* ... */
+}
+
+```
+
+## UGameplayStatics
+
+UGameplayStatics is a very useful class to get objects related to the player, controller, world, etc. Useful methods include:
+
+* GetPlayerPawn
+* GetPlayerController
+* GetPlayerCameraManager
+* GetGameMode
+* PlaySoundAtLocation: play sound
+* SpawnEmitterAtLocation: spawn particle
+
+## Create and call Blueprint event C++
+
+Using a `UFUNCTION(BlueprintImplementableEvent)` in the header file will create an event with the method name to be called in the Blueprint editor. Calling the method in C++ fires the event in the Blueprint.
+
+Example:
+```cpp
+// Header file
+UFUNCTION(BlueprintImplementableEvent)
+void GameStart();
+
+// Implementation
+void SomeOtherFunction()
+{
+	GameStart(); // An GameStart event will be fired in Blueprint
+}
+
+```
+Note: the `GameStart()` doesn't need to be implemented in C++. The IDE may complain, but it compiles with no problem.
+
+## Make a C++ method callable in Blueprint
+
+Add `UFUNCTION(BlueprintCallable)` macro before the method signature in the header file.
+
+## SetTimerHandle
+
+Useful for delaying the execution of a method, or to execute it repeteadly in a specified interval. 
+
+Simple delegate method:
+
+```cpp
+FTimerHandle FireRateTimerHandle;
+GetWorld()->GetTimerManager().SetTimer(FireRateTimerHandle, this, &APawnTurret::CheckFireCondition, FireRate, true);
+
+void APawnTurret::CheckFireCondition()
+
+```
+
+Delegate method with argument:
+
+```cpp
+FTimerHandle EnableControllerTimerHandle;
+FTimerDelegate EnableControllerDelegate = FTimerDelegate::CreateUObject(PlayerController, &APlayerControllerBase::SetControllerEnabled, true);
+GetWorld()->GetTimerManager().SetTimer(
+	EnableControllerTimerHandle,
+	EnableControllerDelegate,
+	StartDelay,
+	false
+);
+
+void APlayerControllerBase::SetControllerEnabled(bool ControllerEnabled)
+```
+
+## Pawn movement
+
+* Axis: APawn::AddActorLocalOffset(FVector MoveDirection)
+
+* Axis: APawn::AddActorLocalRotation(FQuat/FRotator Rotation)
+
+* Axis: APawn::AddMovementInput(FVector MoveDirection, float Value)
+
+* Axis: APawn::AddControllerPitchInput(float Value)
+
+* Axis: APawn::AddControllerYawInput(float Value)
+
+* Action: ACharacter::Jump
+
+Note: See Input_Example.
+
+
+### Useful
+* FVector AActor::GetActorForwardVector();
+* FVector AActor::GetActorRightVector()
